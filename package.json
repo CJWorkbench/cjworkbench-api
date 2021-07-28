@@ -1,0 +1,34 @@
+{
+  "name": "cjworkbench-api",
+  "version": "0.0.1",
+  "description": "Server hosting Workbench's API",
+  "main": "server.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CJWorkbench/cjworkbench-api.git"
+  },
+  "author": "Adam Hooper <adam@adamhooper.com>",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/CJWorkbench/cjworkbench-api/issues"
+  },
+  "homepage": "https://github.com/CJWorkbench/cjworkbench-api#readme",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.23.0",
+    "@google-cloud/storage": "^5.11.0",
+    "@types/node": "^16.4.3",
+    "express": "^4.17.1",
+    "typescript": "^4.3.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/jest": "^26.0.24",
+    "@types/source-map-support": "^0.5.4",
+    "jest": "^27.0.6",
+    "source-map-support": "^0.5.19",
+    "ts-jest": "^27.0.4"
+  }
+}
