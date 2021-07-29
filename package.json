@@ -2,9 +2,10 @@
   "name": "cjworkbench-api",
   "version": "0.0.1",
   "description": "Server hosting Workbench's API",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc --build"
   },
   "repository": {
     "type": "git",
@@ -19,18 +20,18 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.23.0",
     "@google-cloud/storage": "^5.11.0",
-    "@types/node": "^16.4.3",
     "express": "^4.17.1",
-    "pg": "^8.7.1",
-    "typescript": "^4.3.5"
+    "pg": "^8.7.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
+    "@types/node": "^16.4.3",
     "@types/jest": "^26.0.24",
     "@types/source-map-support": "^0.5.4",
     "jest": "^27.0.6",
     "source-map-support": "^0.5.19",
     "supertest": "^6.1.4",
-    "ts-jest": "^27.0.4"
+    "ts-jest": "^27.0.4",
+    "typescript": "^4.3.5"
   }
 }

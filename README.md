@@ -47,6 +47,18 @@ If you modify dependencies, Ctrl+C and restart.
 Being consistent about test IDs lets us easily detect unused files so we
 can delete them.
 
-## Running (in development mode)
+# Running
 
-Use [cjworkbench](https://github.com/CJWorkbench/cjworkbench)'s `bin/dev start`.
+For developing: use [cjworkbench](https://github.com/CJWorkbench/cjworkbench)'s
+`bin/dev start`.
+
+## Environment variables
+
+* `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`: database parameters
+* `CJW_STORAGE_ENGINE`: `gcs` or `s3`
+* `CJW_STORAGE_ENDPOINT`: e.g., `s3.us-east-1.amazonaws.com`
+* `CJW_STORAGE_BUCKET`: something like `datasets.workbenchdata.com`
+* `GOOGLE_APPLICATION_CREDENTIALS`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+  etc.: we rely on S3 and Google Storage libraries to read authentication info
+  from your environment. They can use these environment variables; they can use
+  your Kubernetes pod's metadata service; and so on.
