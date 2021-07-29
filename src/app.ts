@@ -98,22 +98,23 @@ function handleHttpFailure(err, res, next) {
   }
 }
 
+function throwRedirectOnInvalidSlug(actualSlug, datapackage, subpath): void {
+  const canonicalName: string = datapackage.name
+  if (actualSlug !== canonicalName) {
+    throw new HttpFailure(302, "", {"location": `/v1/datasets/${canonicalName}/${subpath}`})
+  }
+}
+
 export default function createApp(options) {
   const storage: StorageInterface = options.storage
   const app = express()
 
-  app.get('/v1/datasets/:workflowSlug/datapackage.json', (req, res, next) => {
+  app.get('/v1/datasets/:workflowSlug/datapackage.json', async (req, res, next) => {
     const { workflowSlug } = req.params
     accessWorkflowIdOrThrowHttpFailure(workflowSlug, req, res)
-      .then((workflowId: number) => {
-        return readDataPackageOrThrowHttpFailure(storage, `/wf-${workflowId}/datapackage.json`)
-      })
-      .then(([buf, datapackage]) => {
-        const canonicalName: string = datapackage.name
-        if (workflowSlug !== canonicalName) {
-          throw new HttpFailure(302, "", {"location": `/v1/datasets/${canonicalName}/datapackage.json`})
-        }
-
+      .then(async (workflowId: number) => {
+        const [buf, datapackage] = await readDataPackageOrThrowHttpFailure(storage, `/wf-${workflowId}/datapackage.json`)
+        throwRedirectOnInvalidSlug(workflowSlug, datapackage, 'datapackage.json')
         res.type('json').send(buf)
       })
       .catch(err => { handleHttpFailure(err, res, next) })
@@ -123,14 +124,41 @@ export default function createApp(options) {
     const { workflowSlug, revision } = req.params
     accessWorkflowIdOrThrowHttpFailure(workflowSlug, req, res)
       .then(async (workflowId: number) => {
-        // This effectively validates :revision, giving 404 on bad syntax
         const [buf, datapackage] = await readDataPackageOrThrowHttpFailure(storage, `/wf-${workflowId}/${revision}/datapackage.json`)
-        const canonicalName: string = datapackage.name
-        if (workflowSlug !== canonicalName) {
-          throw new HttpFailure(302, "", {"location": `/v1/datasets/${canonicalName}/${revision}/datapackage.json`})
+        throwRedirectOnInvalidSlug(workflowSlug, datapackage, `${revision}/datapackage.json`)
+        res.type('json').send(buf)
+      })
+      .catch(err => { handleHttpFailure(err, res, next) })
+  })
+
+  // app.get(/\/v1\/datasets\/(?<workflowSlug>[-0-9a-z]+)\/(?<subpath>(?<revision>r\d+)\/(?:README.md|data\/(?:[-a-z0-9]+_(?<nameEnd>parquet\.parquet|csv\.csv\.gz|json\.json\.gz))))$/, (req, res, next) => {
+  app.get(/\/v1\/datasets\/([-0-9a-z]+)\/((r\d+)\/(?:README.md|data\/(?:[-a-z0-9]+_(parquet\.parquet|csv\.csv\.gz|json\.json\.gz))))$/, (req, res, next) => {
+    const { 0: workflowSlug, 1: subpath, 2: revision, 3: nameEnd } = req.params
+    accessWorkflowIdOrThrowHttpFailure(workflowSlug, req, res)
+      .then(async (workflowId: number) => {
+        const [_, datapackage] = await readDataPackageOrThrowHttpFailure(storage, `/wf-${workflowId}/${revision}/datapackage.json`)
+        throwRedirectOnInvalidSlug(workflowSlug, datapackage, subpath)
+
+        let reader
+        try {
+          reader = await storage.createReader(`/wf-${workflowId}/${subpath}`)
+        } catch (err) {
+          switch (err.message) {
+            case "NotFound": throw new HttpFailure(404, 'This file is not in the dataset')
+            default: throw err
+          }
         }
 
-        res.type('json').send(buf)
+        const resultType = {
+          'parquet.parquet': 'application/x-parquet',
+          'csv.csv.gz': 'application/gzip',
+          'json.json.gz': 'application/gzip',
+          'md': 'text/markdown; charset=utf-8'
+        }[nameEnd || 'md']
+        res.type(resultType)
+        res.set('Content-Length', String(reader.contentLength))
+
+        reader.stream.pipe(res)
       })
       .catch(err => { handleHttpFailure(err, res, next) })
   })

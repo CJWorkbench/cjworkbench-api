@@ -22,6 +22,7 @@ describe.each([
 
   test('3. createReader() streams file contents', async () => {
     const reader = await storage.createReader('wf-3/r1/README.md')
+    expect(reader.contentLength).toEqual(19)
     expect(reader.stream.readableFlowing).toBe(null) // not started yet
     const contents: Buffer = await new Promise((resolve, reject) => {
       const chunks: Array<Buffer> = []

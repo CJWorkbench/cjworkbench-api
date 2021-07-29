@@ -1,8 +1,12 @@
 /* global afterAll, beforeAll, describe, expect, test */
+import fs from 'fs'
+
+import supertest from 'supertest'
+
 import { start, end } from '../src/database'
 import { S3Storage } from '../src/storage'
+import { streamToBuffer } from '../src/util'
 import createApp from '../src/app'
-import supertest from 'supertest'
 
 let storage: S3Storage
 let app
@@ -104,5 +108,63 @@ describe('GET /v1/datasets/:workflow/r:revision/datapackage.json', () => {
     const response = await request.get('/v1/datasets/22-invalid-revision/hi/datapackage.json')
     expect(response.statusCode).toBe(404)
     expect(response.text).toEqual('This dataset is not published')
+  })
+})
+
+describe('GET /v1/datasets/:workflow/r:revision/:file', () => {
+  test('23. redirect on wrong slug (i.e., slug of a different revision)', async () => {
+    const response = await request.get('/v1/datasets/23-wrong-slug/r1/data/tab-1_csv.csv.gz')
+    expect(response.statusCode).toBe(302)
+    expect(response.headers["location"]).toEqual('/v1/datasets/23-right-slug/r1/data/tab-1_csv.csv.gz')
+  })
+
+  test('24. return text/markdown README.md', async () => {
+    const response = await request.get('/v1/datasets/24-readme-md/r1/README.md')
+    expect(response.statusCode).toBe(200)
+    expect(response.headers["content-type"]).toEqual('text/markdown; charset=utf-8')
+    expect(response.text).toEqual('# Readme\n\n(please)\n')
+  })
+
+  test('25. HTTP Forbidden on missing secret', async () => {
+    const response = await request.get('/v1/datasets/25-missing-secret/r1/README.md')
+    expect(response.statusCode).toBe(403)
+    expect(response.text).toEqual('Wrong Authorization token')
+  })
+
+  test('26. HTTP Not Found on missing file from storage', async () => {
+    const response = await request.get('/v1/datasets/26-wrong-subpath/r1/data/tab-2_csv.csv.gz')
+    expect(response.statusCode).toBe(404)
+    expect(response.text).toEqual('This file is not in the dataset')
+  })
+
+  test('27. HTTP Not Found on missing revision', async () => {
+    const response = await request.get('/v1/datasets/27-missing-revision/r2/data/tab-2_csv.csv.gz')
+    expect(response.statusCode).toBe(404)
+    expect(response.text).toEqual('This dataset is not published')
+  })
+
+  test('28. return application/gzip CSV', async () => {
+    const response = await request.get('/v1/datasets/28-csv/r1/data/tab-1_csv.csv.gz')
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toEqual('application/gzip')
+    expect(response.headers['content-length']).toEqual('8')
+    expect(response.text).toEqual('testdata')
+  })
+
+  test('29. return application/gzip JSON', async () => {
+    const response = await request.get('/v1/datasets/29-json/r1/data/tab-1_json.json.gz')
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toEqual('application/gzip')
+    expect(response.headers['content-length']).toEqual('8')
+    expect(response.text).toEqual('testdata')
+  })
+
+  test('30. return application/x-parquet', async () => {
+    // Parquet has no MIME type yet. https://issues.apache.org/jira/browse/PARQUET-1889
+    const response = await request.get('/v1/datasets/30-parquet/r1/data/tab-1_parquet.parquet')
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toEqual('application/x-parquet')
+    expect(response.headers['content-length']).toEqual('8')
+    expect(response.text).toEqual('testdata')
   })
 })

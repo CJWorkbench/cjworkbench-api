@@ -3,12 +3,15 @@ import { PassThrough, Readable } from 'stream'
 import { Storage, Bucket } from '@google-cloud/storage'
 import { ApiError } from '@google-cloud/common'
 import { S3 } from '@aws-sdk/client-s3'
+import { streamToBuffer } from './util'
 
 class StorageReader {
   stream: Readable
+  contentLength: number
 
-  constructor(stream: Readable) {
+  constructor(stream: Readable, contentLength: number) {
     this.stream = stream
+    this.contentLength = contentLength
   }
 }
 
@@ -49,7 +52,7 @@ export class GCSStorage {
       const passthrough = new PassThrough()
       stream.on('response', response => {
         if (response.statusCode > 199 && response.statusCode < 300) {
-          resolve(new StorageReader(passthrough))
+          resolve(new StorageReader(passthrough, Number(response.headers['content-length'])))
         } // otherwise the 'error' event will be emitted
       })
       stream.on('error', err => {
@@ -78,16 +81,6 @@ export class S3Storage {
 
   async readBytes(key: string): Promise<Buffer> {
     const reader = await this.createReader(key)
-
-    function streamToBuffer(stream: Readable): Promise<Buffer> {
-      return new Promise((resolve, reject) => {
-        const chunks: Array<Buffer> = []
-        stream.on("data", chunk => { chunks.push(chunk) })
-        stream.on("error", reject)
-        stream.on("end", () => resolve(Buffer.concat(chunks)))
-      })
-    }
-
     return await streamToBuffer(reader.stream)
   }
 
@@ -102,7 +95,7 @@ export class S3Storage {
       }
     }
 
-    return new StorageReader(response.Body)
+    return new StorageReader(response.Body, response.ContentLength)
   }
 }
 
