@@ -74,3 +74,35 @@ describe('GET /v1/datasets/:workflow/datapackage.json', () => {
     expect(response.headers["location"]).toEqual('/v1/datasets/17-added-slug/datapackage.json')
   })
 })
+
+describe('GET /v1/datasets/:workflow/r:revision/datapackage.json', () => {
+  test('18. redirect on wrong slug (i.e., slug of a different revision)', async () => {
+    const response = await request.get('/v1/datasets/18-slug-2/r1/datapackage.json')
+    expect(response.statusCode).toBe(302)
+    expect(response.headers["location"]).toEqual('/v1/datasets/18-slug-1/r1/datapackage.json')
+  })
+
+  test('19. return JSON on correct slug', async () => {
+    const response = await request.get('/v1/datasets/19-right-slug/r1/datapackage.json')
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toEqual({ name: "19-right-slug", resources:[{ data:[] }] })
+  })
+
+  test('20. HTTP Forbidden on missing secret', async () => {
+    const response = await request.get('/v1/datasets/20-missing-secret/r1/datapackage.json')
+    expect(response.statusCode).toBe(403)
+    expect(response.text).toEqual('Wrong Authorization token')
+  })
+
+  test('21. HTTP Not Found on missing file from storage', async () => {
+    const response = await request.get('/v1/datasets/21-wrong-revision/r2/datapackage.json')
+    expect(response.statusCode).toBe(404)
+    expect(response.text).toEqual('This dataset is not published')
+  })
+
+  test('22. HTTP Not Found on invalid revision', async () => {
+    const response = await request.get('/v1/datasets/22-invalid-revision/hi/datapackage.json')
+    expect(response.statusCode).toBe(404)
+    expect(response.text).toEqual('This dataset is not published')
+  })
+})

@@ -90,6 +90,14 @@ async function readDataPackageOrThrowHttpFailure(storage: StorageInterface, path
   return [buf, json]
 }
 
+function handleHttpFailure(err, res, next) {
+  if (err instanceof HttpFailure) {
+    res.status(err.status).set(err.headers).send(err.text)
+  } else {
+    next(err)
+  }
+}
+
 export default function createApp(options) {
   const storage: StorageInterface = options.storage
   const app = express()
@@ -108,13 +116,23 @@ export default function createApp(options) {
 
         res.type('json').send(buf)
       })
-      .catch(err => {
-        if (err instanceof HttpFailure) {
-          res.status(err.status).set(err.headers).send(err.text)
-        } else {
-          next(err)
+      .catch(err => { handleHttpFailure(err, res, next) })
+  })
+
+  app.get('/v1/datasets/:workflowSlug/:revision/datapackage.json', (req, res, next) => {
+    const { workflowSlug, revision } = req.params
+    accessWorkflowIdOrThrowHttpFailure(workflowSlug, req, res)
+      .then(async (workflowId: number) => {
+        // This effectively validates :revision, giving 404 on bad syntax
+        const [buf, datapackage] = await readDataPackageOrThrowHttpFailure(storage, `/wf-${workflowId}/${revision}/datapackage.json`)
+        const canonicalName: string = datapackage.name
+        if (workflowSlug !== canonicalName) {
+          throw new HttpFailure(302, "", {"location": `/v1/datasets/${canonicalName}/${revision}/datapackage.json`})
         }
+
+        res.type('json').send(buf)
       })
+      .catch(err => { handleHttpFailure(err, res, next) })
   })
 
   return app
