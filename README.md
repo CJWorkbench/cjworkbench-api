@@ -77,3 +77,8 @@ When deploying, consider all these:
 ## Health checks
 
 `GET /healthz` should return `200 OK` with `{"database":"ok","storage":"ok"}`.
+
+# License
+
+Copyright (c) 2021 Tables, Inc. Released under the AGPL-3.0 license. See
+`LICENSE`.
