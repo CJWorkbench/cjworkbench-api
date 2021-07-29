@@ -25,20 +25,20 @@ function timingSafeSecretsEqual(a: string, b: string): boolean {
 }
 
 /**
- * Look up the indicated workflow's name, using the indicated auth.
+ * Look up the indicated workflow, using the indicated auth.
  *
- * * throw Error("Forbidden") if secretId does not match.
- * * throw Error("NotFound") if the specified workflow does not exist.
+ * Resolve if the workflow exists and the secretId (which may be "") matches.
  *
- * For public workflows, secretId should be "".
+ * Throw Error("Forbidden") if secretId does not match.
+ *
+ * Throw Error("NotFound") if the specified workflow does not exist.
  */
-export async function lookupAuthenticatedWorkflowName(id: number, secretId: string): Promise<string> {
-  const { rows } = await pool.query('SELECT secret_id, name FROM workflow WHERE id = $1', [id])
+export async function throwIfWorkflowNotFoundOrForbidden(id: number, secretId: string): Promise<void> {
+  const { rows } = await pool.query('SELECT secret_id FROM workflow WHERE id = $1', [id])
   if (rows.length === 0) {
     throw new Error("NotFound")
   }
   if (!timingSafeSecretsEqual(secretId, rows[0].secret_id)) {
     throw new Error("Forbidden")
   }
-  return rows[0].name
 }

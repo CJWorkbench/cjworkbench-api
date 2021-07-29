@@ -12,7 +12,12 @@ class StorageReader {
   }
 }
 
-class GCSStorage {
+export interface StorageInterface {
+  readBytes(key: string): Promise<Buffer>
+  createReader(key: string): Promise<StorageReader>
+}
+
+export class GCSStorage {
   client: Storage
   bucket: Bucket
 
@@ -61,7 +66,7 @@ class GCSStorage {
   }
 }
 
-class S3Storage {
+export class S3Storage {
   s3: S3
   bucket: string
 
