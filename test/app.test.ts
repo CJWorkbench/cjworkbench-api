@@ -168,3 +168,30 @@ describe('GET /v1/datasets/:workflow/r:revision/:file', () => {
     expect(response.text).toEqual('testdata')
   })
 })
+
+describe('GET /healthz', () => {
+  test('31. succeed', async () => {
+    const response = await request.get('/healthz')
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toEqual({ database: 'ok', storage: 'ok' })
+  })
+
+  test('32. fail if storage fails', async () => {
+    const failingStorage = new S3Storage('http://endpoint-that-will-certainly-error.local', 'datasets.test')
+    const failingApp = createApp({ storage: failingStorage })
+    const response = await supertest(failingApp).get('/healthz')
+    expect(response.statusCode).toBe(500)
+    expect(response.body.storage).toMatch(/ENOTFOUND/)
+  })
+
+  test('33. fail if database fails', async () => {
+    try {
+      await end()
+      const response = await request.get('/healthz')
+      expect(response.statusCode).toBe(500)
+      expect(response.body.database).toEqual('Error: Cannot use a pool after calling end on the pool')
+    } finally {
+      await start()
+    }
+  })
+})

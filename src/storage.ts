@@ -18,15 +18,25 @@ class StorageReader {
 export interface StorageInterface {
   readBytes(key: string): Promise<Buffer>
   createReader(key: string): Promise<StorageReader>
+  healthzStorageError(): Promise<string | null>
 }
 
 export class GCSStorage {
   client: Storage
+  healthzClient: Storage
   bucket: Bucket
+  healthzBucket: Bucket
 
   constructor(endpoint: string, bucket: string) {
-    this.client = new Storage({ apiEndpoint: endpoint })
+    this.client = new Storage({
+      apiEndpoint: endpoint,
+    })
+    this.healthzClient = new Storage({
+      apiEndpoint: endpoint,
+      retryOptions: { autoRetry: false, totalTimeout: 1, maxRetries: 0 }
+    })
     this.bucket = this.client.bucket(bucket)
+    this.healthzBucket = this.healthzClient.bucket(bucket)
   }
 
   async readBytes(key: string): Promise<Buffer> {
@@ -67,6 +77,16 @@ export class GCSStorage {
       stream.pipe(passthrough)
     })
   }
+
+  async healthzStorageError(): Promise<string | null> {
+    try {
+      await this.healthzBucket.file("healthz").exists() // we don't care whether it exists
+    } catch (err) {
+      return String(err)
+    }
+
+    return null
+  }
 }
 
 export class S3Storage {
@@ -96,6 +116,21 @@ export class S3Storage {
     }
 
     return new StorageReader(response.Body, response.ContentLength)
+  }
+
+  async healthzStorageError(): Promise<string | null> {
+    try {
+      await this.s3.headObject({
+        Bucket: this.bucket,
+        Key: 'healthz' // we don't care whether it's there
+      })
+    } catch (err) {
+      switch (err.name) {
+        case "NotFound": return null // not NoSuchKey, for some reason
+        default: return String(err)
+      }
+    }
+    return null
   }
 }
 

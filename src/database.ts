@@ -42,3 +42,12 @@ export async function throwIfWorkflowNotFoundOrForbidden(id: number, secretId: s
     throw new Error("Forbidden")
   }
 }
+
+export async function healthzDatabaseError(): Promise<string | null> {
+  try {
+    await pool.query('SELECT 1')
+  } catch (err) {
+    return String(err)
+  }
+  return null
+}

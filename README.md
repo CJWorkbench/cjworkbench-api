@@ -52,13 +52,28 @@ can delete them.
 For developing: use [cjworkbench](https://github.com/CJWorkbench/cjworkbench)'s
 `bin/dev start`.
 
+If you want to test this dev server before committing, in your cjworkbench
+development environment, disable the cjworkbench-included `api` and run this
+one instead.
+
+```bash
+bin/dev start --scale api=0
+../cjworkbench-api/bin/run-in-cjworkbench-bin/dev/environment.sh
+```
+
 ## Environment variables
+
+When deploying, consider all these:
 
 * `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`: database parameters
 * `CJW_STORAGE_ENGINE`: `gcs` or `s3`
-* `CJW_STORAGE_ENDPOINT`: e.g., `s3.us-east-1.amazonaws.com`
+* `CJW_STORAGE_ENDPOINT`: e.g., `https://s3.us-east-1.amazonaws.com`
 * `CJW_STORAGE_BUCKET`: something like `datasets.workbenchdata.com`
 * `GOOGLE_APPLICATION_CREDENTIALS`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
   etc.: we rely on S3 and Google Storage libraries to read authentication info
   from your environment. They can use these environment variables; they can use
   your Kubernetes pod's metadata service; and so on.
+
+## Health checks
+
+`GET /healthz` should return `200 OK` with `{"database":"ok","storage":"ok"}`.

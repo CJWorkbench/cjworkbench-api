@@ -39,4 +39,15 @@ describe.each([
   test('4. createReader() throws NotFound', async () => {
     await expect(storage.createReader('wf-4/r1/README.md')).rejects.toThrow('NotFound')
   })
+
+  test('5. healthzStorageError() returns null on success', async () => {
+    const result = await storage.healthzStorageError()
+    expect(result).toBe(null)
+  })
+
+  test('6. healthzStorageError() returns a message', async () => {
+    const badStorage = createStorage({ ...env, CJW_STORAGE_ENDPOINT: 'http://not-a-valid-endpoint.local' })
+    const result = await badStorage.healthzStorageError()
+    expect(result).not.toBe(null)
+  })
 })
