@@ -107,7 +107,10 @@ function throwRedirectOnInvalidSlug(actualSlug, datapackage, subpath): void {
 
 export default function createApp(options) {
   const storage: StorageInterface = options.storage
-  const app = express()
+
+  const app = express();
+
+  (options.middlewares || []).forEach(middleware => app.use(middleware))
 
   app.get('/healthz', (req, res, next) => {
     Promise.all([ healthzDatabaseError(), storage.healthzStorageError() ])
