@@ -60,6 +60,8 @@ async function main() {
   await start()
   try {
     const app = createApp({ storage, middlewares })
+    app.set('strict routing', true)
+    app.set('trust proxy', true)
     await new Promise((resolve, reject) => {
       app.listen(8080)
         .once('listening', () => { console.log('Listening on 0.0.0.0:8080') })

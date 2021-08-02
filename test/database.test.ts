@@ -19,3 +19,7 @@ test('7. throwIfWorkflowNotFoundOrForbidden() with good secretId gives name', as
 test('8. throwIfWorkflowNotFoundOrForbidden() with empty secretId gives name', async () => {
   await throwIfWorkflowNotFoundOrForbidden(8, '')
 })
+
+test('34. throwIfWorkflowNotFoundOrForbidden() succeed when workflow is public and has a not-needed secretId', async () => {
+  await throwIfWorkflowNotFoundOrForbidden(34, '')
+})

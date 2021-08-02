@@ -34,11 +34,11 @@ function timingSafeSecretsEqual(a: string, b: string): boolean {
  * Throw Error("NotFound") if the specified workflow does not exist.
  */
 export async function throwIfWorkflowNotFoundOrForbidden(id: number, secretId: string): Promise<void> {
-  const { rows } = await pool.query('SELECT secret_id FROM workflow WHERE id = $1', [id])
+  const { rows } = await pool.query('SELECT public, secret_id FROM workflow WHERE id = $1', [id])
   if (rows.length === 0) {
     throw new Error("NotFound")
   }
-  if (!timingSafeSecretsEqual(secretId, rows[0].secret_id)) {
+  if (!rows[0].public && !timingSafeSecretsEqual(secretId, rows[0].secret_id)) {
     throw new Error("Forbidden")
   }
 }

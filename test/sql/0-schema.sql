@@ -1,4 +1,5 @@
 CREATE TABLE workflow (
   id SERIAL NOT NULL,
-  secret_id VARCHAR NOT NULL DEFAULT ''
+  public BOOLEAN NOT NULL,
+  secret_id VARCHAR NOT NULL
 );
