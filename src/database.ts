@@ -5,7 +5,7 @@ import { Pool } from 'pg'
 let pool: Pool
 
 export async function start(): Promise<void> {
-  pool = new Pool({ connectionTimeoutMillis: 1000, max: 3 })
+  pool = new Pool({ connectionTimeoutMillis: 30000, max: 3 })
   await pool.query("SELECT 1")
 }
 
