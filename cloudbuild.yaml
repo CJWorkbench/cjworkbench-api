@@ -1,0 +1,23 @@
+# See https://cloud.google.com/cloud-build/docs/build-debug-locally for debug
+# instructions.
+#
+# The copy/paste-able command:
+# gcloud config configurations activate workbenchdata-ci  # set PROJECT_ID
+# cloud-build-local --dryrun=false --substitutions COMMIT_SHA=abc123 .
+
+steps:
+
+- name: 'docker/compose:1.29.2'
+  entrypoint: 'sh'
+  args: [ 'bin/test-once.sh' ]
+  env:
+  - 'PROJECT_ID=$PROJECT_ID'
+  - 'COMMIT_SHA=$COMMIT_SHA'
+
+- name: 'gcr.io/cloud-builders/docker:20.10.3'
+  args: [ 'build', '.', '--target', 'production', '--tag', 'gcr.io/$PROJECT_ID/api:$COMMIT_SHA' ]
+  env:
+  - 'DOCKER_BUILDKIT=1'
+
+images:
+- 'gcr.io/$PROJECT_ID/api:$COMMIT_SHA'
