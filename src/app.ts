@@ -147,16 +147,19 @@ export default function createApp(options) {
   })
 
   // app.get(/\/v1\/datasets\/(?<workflowSlug>[-0-9a-z]+)\/(?<subpath>(?<revision>r\d+)\/(?:README.md|data\/(?:[-a-z0-9]+_(?<nameEnd>parquet\.parquet|csv\.csv\.gz|json\.json\.gz))))$/, (req, res, next) => {
-  app.get(/\/v1\/datasets\/([-0-9a-z]+)\/((r\d+)\/(?:README.md|data\/(?:[-a-z0-9]+_(parquet\.parquet|csv\.csv\.gz|json\.json\.gz))))$/, (req, res, next) => {
-    const { 0: workflowSlug, 1: subpath, 2: revision, 3: nameEnd } = req.params
+  app.get(/\/v1\/datasets\/([-0-9a-z]+)\/((r\d+)\/(?:README.md|data\/(?:[-a-z0-9]+\.(parquet|csv|json))))$/, (req, res, next) => {
+    const { 0: workflowSlug, 1: subpath, 2: revision, 3: ext } = req.params
     accessWorkflowIdOrThrowHttpFailure(workflowSlug, req, res)
       .then(async (workflowId: number) => {
-        const [_, datapackage] = await readDataPackageOrThrowHttpFailure(storage, `/wf-${workflowId}/${revision}/datapackage.json`)
+        const [_, datapackage] = await readDataPackageOrThrowHttpFailure(storage, `wf-${workflowId}/${revision}/datapackage.json`)
+
+        const isCompressed = ext === 'csv' || ext === 'json'
         throwRedirectOnInvalidSlug(workflowSlug, datapackage, subpath)
 
+        const storagePath = `wf-${workflowId}/${subpath}${isCompressed ? '.gz' : ''}`
         let reader
         try {
-          reader = await storage.createReader(`/wf-${workflowId}/${subpath}`)
+          reader = await storage.createReader(storagePath)
         } catch (err) {
           switch (err.message) {
             case "NotFound": throw new HttpFailure(404, 'This file is not in the dataset')
@@ -165,13 +168,16 @@ export default function createApp(options) {
         }
 
         const resultType = {
-          'parquet.parquet': 'application/x-parquet',
-          'csv.csv.gz': 'application/gzip',
-          'json.json.gz': 'application/gzip',
+          'parquet': 'application/x-parquet',
+          'csv': 'text/csv; charset=utf-8',
+          'json': 'application/json; charset=utf-8',
           'md': 'text/markdown; charset=utf-8'
-        }[nameEnd || 'md']
+        }[ext || 'md']
         res.type(resultType)
         res.set('Content-Length', String(reader.contentLength))
+        if (isCompressed) {
+          res.set('Content-Encoding', 'gzip')
+        }
 
         reader.stream.pipe(res)
       })

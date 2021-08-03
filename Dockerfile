@@ -1,4 +1,5 @@
 FROM node:16.5.0-buster-slim AS pre-package-lock
+ENTRYPOINT []
 WORKDIR /app
 COPY package.json /app/
 
