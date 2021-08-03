@@ -73,4 +73,8 @@ async function main() {
   }
 }
 
+// Add signal handlers in case we're PID 1
+process.on('SIGINT', () => process.exit(-2))
+process.on('SIGTERM', () => process.exit(-15))
+
 main()
