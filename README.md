@@ -5,7 +5,7 @@ Workbench API. Handles these endpoints:
 * `/v1/datasets/{workflow_id}-{workflow_slug}/datapackage.json`
 * `/v1/datasets/{workflow_id}-{workflow_slug}/r{revision}/datapackage.json`
 * `/v1/datasets/{workflow_id}-{workflow_slug}/r{revision}/README.md`
-* `/v1/datasets/{workflow_id}-{workflow_slug}/r{revision}/{table}_{csv|json|parquet}.{csv|json|parquet}`
+* `/v1/datasets/{workflow_id}-{workflow_slug}/r{revision}/data/{table}.{csv|json|parquet}`
 
 # Developing
 
